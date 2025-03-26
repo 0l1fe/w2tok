@@ -5,20 +5,24 @@
   <title>w2tok</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <style>
+    /* Reset and global styles */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    /* Ensure the base background is black and prevent overscroll glow */
-    html, body {
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-      background-color: #000;
-      overscroll-behavior: none;
+    html {
+      height: -webkit-fill-available; /* iOS workaround */
     }
+    body {
+      min-height: -webkit-fill-available; /* iOS workaround */
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background-color: #000;
+      overflow: hidden;
+      /* Apply safe area globally */
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
     /* Full-screen container for each article */
     #article-container {
       height: 100vh;
@@ -32,27 +36,36 @@
       background-position: center;
       transition: background-image 0.3s ease;
     }
-    /* Overlay for text content with extra padding for safe area */
+
+    /* Enhanced overlay for text content */
     .overlay {
       width: 100%;
-      padding: 20px;
-      padding-bottom: calc(20px + env(safe-area-inset-bottom));
-      background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+      padding: 30px 20px 30px 20px;
+      /* Add safe area in addition to global padding */
+      padding-bottom: calc(30px + env(safe-area-inset-bottom));
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
       color: #fff;
       box-sizing: border-box;
+      transition: all 0.3s ease;
     }
     .title {
       font-size: 2rem;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
+      font-weight: 500;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
     }
     .title a {
       color: #fff;
       text-decoration: none;
-      border-bottom: 1px dashed rgba(255, 255, 255, 0.7);
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.8);
+      transition: border-color 0.3s ease;
+    }
+    .title a:hover {
+      border-color: #fff;
     }
     .extract {
       font-size: 1rem;
-      line-height: 1.4;
+      line-height: 1.5;
       max-height: 40vh;
       overflow-y: auto;
     }
