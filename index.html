@@ -10,11 +10,14 @@
       padding: 0;
       box-sizing: border-box;
     }
+    /* Ensure the base background is black and prevent overscroll glow */
     html, body {
       height: 100%;
       width: 100%;
       overflow: hidden;
       font-family: Arial, sans-serif;
+      background-color: #000;
+      overscroll-behavior: none;
     }
     /* Full-screen container for each article */
     #article-container {
@@ -29,11 +32,11 @@
       background-position: center;
       transition: background-image 0.3s ease;
     }
-    /* Overlay for text content */
+    /* Overlay for text content with extra padding for safe area */
     .overlay {
       width: 100%;
       padding: 20px;
-      padding-bottom: calc(20px + env(safe-area-inset-bottom)); /* Prevent hiding under address bar */
+      padding-bottom: calc(20px + env(safe-area-inset-bottom));
       background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
       color: #fff;
       box-sizing: border-box;
@@ -50,9 +53,8 @@
     .extract {
       font-size: 1rem;
       line-height: 1.4;
-      max-height: 35vh; /* Ensures visibility */
+      max-height: 40vh;
       overflow-y: auto;
-      padding-bottom: 10px; /* Extra space for safety */
     }
   </style>
 </head>
