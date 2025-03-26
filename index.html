@@ -2,30 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>w2tok</title>
+  <title>Infinite Wikipedia Articles</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <style>
-    /* Reset and global styles */
-    * {
+    /* Universal reset */
+    *, *::before, *::after {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    html {
-      height: -webkit-fill-available; /* iOS workaround */
-    }
-    body {
-      min-height: -webkit-fill-available; /* iOS workaround */
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-      background-color: #000;
+    html, body {
+      height: 100%;
+      width: 100%;
+      font-family: Arial, sans-serif;
       overflow: hidden;
-      /* Apply safe area globally */
-      padding-bottom: env(safe-area-inset-bottom);
     }
-
-    /* Full-screen container for each article */
+    /* Use a CSS variable for viewport height to work around iOS issues */
     #article-container {
-      height: 100vh;
+      height: calc(var(--vh, 1vh) * 100);
       width: 100vw;
       position: relative;
       display: flex;
@@ -36,38 +30,38 @@
       background-position: center;
       transition: background-image 0.3s ease;
     }
-
-    /* Enhanced overlay for text content */
+    /* Overlay for text content with mobile-friendly spacing */
     .overlay {
       width: 100%;
-      padding: 30px 20px 30px 20px;
-      /* Add safe area in addition to global padding */
-      padding-bottom: calc(30px + env(safe-area-inset-bottom));
-      background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+      padding: 16px;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
       color: #fff;
-      box-sizing: border-box;
-      transition: all 0.3s ease;
+      overflow-y: auto;
+      max-height: 100%;
     }
     .title {
-      font-size: 2rem;
-      margin-bottom: 15px;
-      font-weight: 500;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      font-size: 1.75rem;
+      margin-bottom: 8px;
+      word-wrap: break-word;
     }
     .title a {
       color: #fff;
       text-decoration: none;
-      border-bottom: 1px dashed rgba(255, 255, 255, 0.8);
-      transition: border-color 0.3s ease;
-    }
-    .title a:hover {
-      border-color: #fff;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.7);
     }
     .extract {
       font-size: 1rem;
       line-height: 1.5;
-      max-height: 40vh;
-      overflow-y: auto;
+      word-wrap: break-word;
+    }
+    /* Additional adjustments for very small devices */
+    @media (max-width: 400px) {
+      .title {
+        font-size: 1.5rem;
+      }
+      .extract {
+        font-size: 0.9rem;
+      }
     }
   </style>
 </head>
@@ -78,7 +72,15 @@
 </div>
 
 <script>
-  // Store articles and pointer for infinite scrolling
+  // Set a CSS variable for the viewport height (fixes iOS Safari's 100vh issues)
+  function setVH() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+  }
+  window.addEventListener('resize', setVH);
+  setVH();
+
+  // Store articles for infinite scrolling
   const articles = [];
   let currentIndex = -1;
   let nextArticle = null;
@@ -86,9 +88,14 @@
   const container = document.getElementById('article-container');
   const overlay = document.getElementById('overlay-content');
 
+  // Helper to extract the first paragraph from the article summary
+  function getFirstParagraph(text) {
+    if (!text) return '';
+    return text.split('\n\n')[0];
+  }
+
   // Display article using thumbnail as background and overlay text for title and first paragraph.
   function displayArticle(article) {
-    // Set background image if available, otherwise use black background
     if (article.thumbnail && article.thumbnail.source) {
       container.style.backgroundImage = `url(${article.thumbnail.source})`;
     } else {
@@ -96,11 +103,7 @@
       container.style.backgroundColor = '#000';
     }
     
-    // Always show the first paragraph from the article extract
-    let firstParagraph = 'No summary available.';
-    if (article.extract) {
-      firstParagraph = article.extract.split('\n')[0];
-    }
+    const firstParagraph = getFirstParagraph(article.extract) || 'No summary available.';
     
     overlay.innerHTML = `
       <div class="title">
@@ -159,10 +162,10 @@
     }
   }
 
-  // Touch event variables for mobile navigation
+  // Touch events for swiping up/down
   let startY = 0;
   let endY = 0;
-  const threshold = 50; // Minimum swipe distance
+  const threshold = 50; // Minimum swipe distance in pixels
 
   document.addEventListener('touchstart', (e) => {
     startY = e.touches[0].clientY;
@@ -171,8 +174,8 @@
   document.addEventListener('touchend', (e) => {
     endY = e.changedTouches[0].clientY;
     const deltaY = endY - startY;
-    if (deltaY < -threshold) loadNext(); // Swipe up for next article
-    else if (deltaY > threshold) loadPrevious(); // Swipe down for previous article
+    if (deltaY < -threshold) loadNext();
+    else if (deltaY > threshold) loadPrevious();
   });
 
   // Keyboard support for desktop users
