@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>w2tok</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    /* Full-screen container for each article */
+    #article-container {
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background: #000;
+      background-size: cover;
+      background-position: center;
+      transition: background-image 0.3s ease;
+    }
+    /* Overlay for text content */
+    .overlay {
+      width: 100%;
+      padding: 20px;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+      color: #fff;
+      box-sizing: border-box;
+    }
+    .title {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    .title a {
+      color: #fff;
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.7);
+    }
+    .extract {
+      font-size: 1rem;
+      line-height: 1.4;
+      max-height: 40vh;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+<div id="article-container">
+  <div class="overlay" id="overlay-content"></div>
+</div>
+
+<script>
+  // Store articles and pointer for infinite scrolling
+  const articles = [];
+  let currentIndex = -1;
+  let nextArticle = null;
+  
+  const container = document.getElementById('article-container');
+  const overlay = document.getElementById('overlay-content');
+
+  // Display article using thumbnail as background and overlay text for title and first paragraph.
+  function displayArticle(article) {
+    // Set background image if available, otherwise use black background
+    if (article.thumbnail && article.thumbnail.source) {
+      container.style.backgroundImage = `url(${article.thumbnail.source})`;
+    } else {
+      container.style.backgroundImage = 'none';
+      container.style.backgroundColor = '#000';
+    }
+    
+    // Always show the first paragraph from the article extract
+    let firstParagraph = 'No summary available.';
+    if (article.extract) {
+      firstParagraph = article.extract.split('\n')[0];
+    }
+    
+    overlay.innerHTML = `
+      <div class="title">
+        <a href="${article.content_urls.desktop.page}" target="_blank">${article.title}</a>
+      </div>
+      <div class="extract">${firstParagraph}</div>
+    `;
+  }
+
+  // Fetch a random Wikipedia article summary
+  async function fetchRandomArticle() {
+    try {
+      const response = await fetch("https://en.wikipedia.org/api/rest_v1/page/random/summary");
+      if (!response.ok) throw new Error("Network error");
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching article:", error);
+      return null;
+    }
+  }
+
+  // Prefetch the next article in the background
+  async function prefetchNextArticle() {
+    if (!nextArticle) {
+      nextArticle = await fetchRandomArticle();
+    }
+  }
+
+  // Load next article and display it immediately (infinite scrolling)
+  async function loadNext() {
+    if (nextArticle) {
+      articles.push(nextArticle);
+      currentIndex++;
+      displayArticle(nextArticle);
+      nextArticle = null;
+      prefetchNextArticle();
+    } else if (currentIndex < articles.length - 1) {
+      currentIndex++;
+      displayArticle(articles[currentIndex]);
+    } else {
+      const article = await fetchRandomArticle();
+      if (article) {
+        articles.push(article);
+        currentIndex++;
+        displayArticle(article);
+        prefetchNextArticle();
+      }
+    }
+  }
+
+  // Load previous article from cache
+  function loadPrevious() {
+    if (currentIndex > 0) {
+      currentIndex--;
+      displayArticle(articles[currentIndex]);
+    }
+  }
+
+  // Touch event variables for mobile navigation
+  let startY = 0;
+  let endY = 0;
+  const threshold = 50; // Minimum swipe distance
+
+  document.addEventListener('touchstart', (e) => {
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    endY = e.changedTouches[0].clientY;
+    const deltaY = endY - startY;
+    if (deltaY < -threshold) loadNext(); // Swipe up for next article
+    else if (deltaY > threshold) loadPrevious(); // Swipe down for previous article
+  });
+
+  // Keyboard support for desktop users
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') loadNext();
+    else if (e.key === 'ArrowUp') loadPrevious();
+  });
+
+  // Initialize: prefetch and load the first article
+  (async function init() {
+    await prefetchNextArticle();
+    loadNext();
+  })();
+</script>
+
+</body>
+</html>
